@@ -5,5 +5,8 @@
 //! This crate provides access to features of the gonk HAL
 
 mod vibrator;
+mod hw_module;
+mod lights;
 
-pub use vibrator::Vibrator;
+pub use vibrator::{PatternGuard, Vibrator};
+pub use lights::{LightsModule, LightsDevice, LightKind, LightState, BrightnessMode, FlashMode};

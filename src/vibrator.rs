@@ -23,9 +23,7 @@ extern "C" {
     fn vibrator_off() -> c_int;
 }
 
-#[derive(Clone)]
-pub struct Vibrator;
-
+/// A structure to control cancellation of ongoing vibrations.
 #[derive(Clone)]
 pub struct PatternGuard {
     canceled: Arc<AtomicBool>,
@@ -54,6 +52,10 @@ impl PatternGuard {
         self.canceled.load(Ordering::Relaxed)
     }
 }
+
+/// The vibrator device.
+#[derive(Clone)]
+pub struct Vibrator;
 
 impl Vibrator {
     /// Creates a `Vibrator` if the hardware supports it, or None.

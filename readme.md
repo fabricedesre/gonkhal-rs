@@ -9,8 +9,8 @@ __*The current version is based on the KitKat HAL, which is very old. This will 
 ## Usage
 
 In order to build, you need to set two environment variables:
-- GONK_HOME : the path of your Gonk source directory.
-- GONK_DEVICE: the codename of your device (eg. aries for a z3c).
+- GONK_DIR : the path of your Gonk source directory.
+- GONK_PRODUCT_NAME: the codename of your device (eg. aries for a z3c).
 
 Then run `build.sh` to build the library, or pass `--example vibrator` to
 build the vibrator example.

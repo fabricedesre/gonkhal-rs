@@ -4,7 +4,7 @@
 
 extern crate gonkhal;
 
-use gonkhal::{BrightnessMode, FlashMode, LightsModule, LightKind, LightState};
+use gonkhal::{BrightnessMode, FlashMode, LightKind, LightState, LightsModule};
 use std::{thread, time};
 
 fn main() {
@@ -22,14 +22,14 @@ fn main() {
                 brightness_mode: BrightnessMode::User,
             };
 
-            if let Some(device) = module.get_device(LightKind::Notifications) {
+            if let Some(device) = module.get_device(LightKind::Attention) {
                 if color.0 + color.1 + color.2 == 0 {
                     device.off();
                 } else {
-                    println!("Blinking in #{:02x}{:02x}{:02x} for 2 seconds",
-                             color.0,
-                             color.1,
-                             color.2);
+                    println!(
+                        "Blinking in #{:02x}{:02x}{:02x} for 2 seconds",
+                        color.0, color.1, color.2
+                    );
                     device.set(state.clone());
                 }
             }
@@ -43,7 +43,6 @@ fn main() {
                 }
             }
         }
-
     } else {
         println!("This device doesn't have a lights module.");
     }

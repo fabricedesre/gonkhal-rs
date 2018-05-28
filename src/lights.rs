@@ -54,9 +54,9 @@ pub struct light_device_t {
      *
      * Returns: 0 on succes, error code on failure.
      */
-    pub set_light: ::std::option::Option<unsafe extern "C" fn(dev: *mut light_device_t,
-                                                                  state: *const light_state_t)
-                                                                  -> raw::c_int>,
+    pub set_light: ::std::option::Option<
+        unsafe extern "C" fn(dev: *mut light_device_t, state: *const light_state_t) -> raw::c_int,
+    >,
 }
 
 impl Default for light_device_t {
@@ -138,8 +138,8 @@ impl Default for LightState {
 impl LightState {
     fn as_native(&self) -> light_state_t {
         light_state_t {
-            color: ((0xff as u32) << 24) | ((self.color.0 as u32) << 16) |
-                   ((self.color.1 as u32) << 8) | self.color.2 as u32,
+            color: ((0xff as u32) << 24) | ((self.color.0 as u32) << 16)
+                | ((self.color.1 as u32) << 8) | self.color.2 as u32,
             flash_mode: self.flash_mode.clone() as i32,
             flash_on_ms: self.flash_on_ms as i32,
             flash_off_ms: self.flash_off_ms as i32,
@@ -158,8 +158,8 @@ impl LightsDevice {
     /// Returns true if successful.
     pub fn set(&self, state: LightState) -> bool {
         if let Some(set_light) = self.device.set_light {
-            return unsafe { set_light(Box::into_raw(self.device.clone()), &state.as_native()) } ==
-                   0;
+            return unsafe { set_light(Box::into_raw(self.device.clone()), &state.as_native()) }
+                == 0;
         }
         false
     }
@@ -183,8 +183,11 @@ impl LightsModule {
     pub fn new() -> Option<Self> {
         unsafe {
             let mut module: Box<hw_module_t> = mem::uninitialized();
-            if hw_get_module(LIGHTS_HARDWARE_MODULE_ID.as_ptr(),
-                             &mut module as *mut _ as *mut _) == 0 {
+            if hw_get_module(
+                LIGHTS_HARDWARE_MODULE_ID.as_ptr(),
+                &mut module as *mut _ as *mut _,
+            ) == 0
+            {
                 Some(LightsModule { module: module })
             } else {
                 None
@@ -199,9 +202,12 @@ impl LightsModule {
             let mut device: Box<light_device_t> = mem::uninitialized();
 
             if let Some(open) = (*self.module.methods).open {
-                if open(Box::into_raw(self.clone().module),
-                        light.to_cstr().as_ptr(),
-                        &mut device as *mut _ as *mut _) == 0 {
+                if open(
+                    Box::into_raw(self.clone().module),
+                    light.to_cstr().as_ptr(),
+                    &mut device as *mut _ as *mut _,
+                ) == 0
+                {
                     Some(LightsDevice { device: device })
                 } else {
                     None

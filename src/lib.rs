@@ -7,6 +7,10 @@
 mod vibrator;
 mod hw_module;
 mod lights;
+mod wifi;
+mod wake_lock;
 
 pub use vibrator::{PatternGuard, Vibrator};
 pub use lights::{LightsModule, LightsDevice, LightKind, LightState, BrightnessMode, FlashMode};
+pub use wifi::Wifi;
+pub use wake_lock::{Wakelock, WakelockLevel};

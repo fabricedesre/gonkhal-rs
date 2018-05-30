@@ -16,7 +16,7 @@ fn send_command(command: &str) {
 fn main() {
     println!("GonkHal wifi demo...");
 
-    send_command("LOGLEVEL DEBUG");
+    // send_command("LOGLEVEL DEBUG");
 
     if !Wifi::is_driver_loaded() {
         println!("Loading Wifi driver...");
@@ -28,6 +28,12 @@ fn main() {
     } else {
         println!("Wifi driver already loaded.")
     }
+
+    // Needed to trigger the update of `primary_iface` in hardware/libhardware_legacy/wifi/wifi.c
+    // once we call start_supplicant() after.
+    // TODO: figure out why we really have to do that since `primary_iface` is
+    // a `static char*` ....
+    Wifi::stop_supplicant(false).expect("Failed to stop supplicant");
 
     match Wifi::start_supplicant(false) {
         Ok(()) => println!("Supplicant started."),
@@ -56,7 +62,7 @@ fn main() {
         }
     }
 
-    let commands = ["STATUS", "SCAN TYPE=ONLY", "GET_NETWORKS"];
+    let commands = ["STATUS", "SCAN TYPE=ONLY", "SCAN_INTERVAL 15", "AUTOSCAN periodic:15"];
 
     for command in commands.iter() {
         println!("-> Send {}", command);

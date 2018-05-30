@@ -7,8 +7,8 @@ extern crate gonkhal;
 use gonkhal::Wifi;
 
 fn send_command(command: &str) {
-    match Wifi::command(command) {
-        Err(_) => println!("Error sending `{}`", command),
+    match Wifi::command(&format!("IFNAME=wlan0 {}", command)) {
+        Err(err) => println!("Error sending `{}`: {}", command, err),
         Ok(response) => println!("Response: {}", response),
     }
 }
@@ -16,22 +16,34 @@ fn send_command(command: &str) {
 fn main() {
     println!("GonkHal wifi demo...");
 
+    send_command("LOGLEVEL DEBUG");
+
     if !Wifi::is_driver_loaded() {
         println!("Loading Wifi driver...");
-        Wifi::load_driver();
+        Wifi::load_driver().expect("Failed to load Wifi driver");
         if !Wifi::is_driver_loaded() {
-            println!("Failed to load driver, aborting :(");
+            println!("Wifi driver is still not loaded, aborting :(");
             return;
         }
     } else {
         println!("Wifi driver already loaded.")
     }
 
-    let started = Wifi::start_supplicant(false);
-    println!("Supplicant starting status: {}", started);
+    match Wifi::start_supplicant(false) {
+        Ok(()) => println!("Supplicant started."),
+        Err(code) => {
+            println!("Failed to start supplicant: err={}", code);
+            return;
+        }
+    }
 
-    let connected = Wifi::connect_to_supplicant();
-    println!("Connecting to supplicant status: {}", connected);
+    match Wifi::connect_to_supplicant() {
+        Ok(()) => println!("Connected to supplicant."),
+        Err(code) => {
+            println!("Failed to connect to supplicant: err={}", code);
+            return;
+        }
+    }
 
     fn get_event() {
         match Wifi::wait_for_event() {

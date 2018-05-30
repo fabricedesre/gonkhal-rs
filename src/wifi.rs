@@ -3,7 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 use std::ffi::CString;
-use std::os::raw;
+use std::os::raw::{c_char, c_int};
 
 // Based on hardware/libhardware_legacy/include/hardware_legacy/wifi.h
 #[link(name = "hardware_legacy")]
@@ -13,42 +13,42 @@ extern "C" {
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn wifi_load_driver() -> raw::c_int;
+    pub fn wifi_load_driver() -> c_int;
 
     /**
      * Unload the Wi-Fi driver.
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn wifi_unload_driver() -> raw::c_int;
+    pub fn wifi_unload_driver() -> c_int;
 
     /**
      * Check if the Wi-Fi driver is loaded.
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn is_wifi_driver_loaded() -> raw::c_int;
+    pub fn is_wifi_driver_loaded() -> c_int;
 
     /**
      * Start supplicant.
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn wifi_start_supplicant(p2pSupported: raw::c_int) -> raw::c_int;
+    pub fn wifi_start_supplicant(p2pSupported: c_int) -> c_int;
 
     /**
      * Stop supplicant.
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn wifi_stop_supplicant(p2pSupported: raw::c_int) -> raw::c_int;
+    pub fn wifi_stop_supplicant(p2pSupported: c_int) -> c_int;
 
     /**
      * Open a connection to supplicant
      *
      * @return 0 on success, < 0 on failure.
      */
-    pub fn wifi_connect_to_supplicant() -> raw::c_int;
+    pub fn wifi_connect_to_supplicant() -> c_int;
 
     /**
      * Close connection to supplicant
@@ -69,7 +69,7 @@ extern "C" {
      * event (for instance, no connection), and less than 0
      * if there is an error.
      */
-    pub fn wifi_wait_for_event(buf: *mut raw::c_char, len: usize) -> raw::c_int;
+    pub fn wifi_wait_for_event(buf: *mut c_char, len: usize) -> c_int;
 
     /**
      * wifi_command() issues a command to the Wi-Fi driver.
@@ -90,11 +90,8 @@ extern "C" {
      *
      * @return 0 if successful, < 0 if an error.
      */
-    pub fn wifi_command(
-        command: *const raw::c_char,
-        reply: *mut raw::c_char,
-        reply_len: *mut usize,
-    ) -> raw::c_int;
+    pub fn wifi_command(command: *const c_char, reply: *mut c_char, reply_len: *mut usize)
+        -> c_int;
 }
 
 /// A stateless Wifi driver.
@@ -107,32 +104,43 @@ impl Wifi {
     }
 
     /// Load the Wifi driver.
-    pub fn load_driver() -> bool {
-        unsafe { wifi_load_driver() == 0 }
+    pub fn load_driver() -> Result<(), c_int> {
+        match unsafe { wifi_load_driver() } {
+            0 => Ok(()),
+            err => Err(err),
+        }
     }
 
     /// Unload the Wifi driver.
-    pub fn unload_driver() -> bool {
-        unsafe { wifi_unload_driver() == 0 }
+    pub fn unload_driver() -> Result<(), c_int> {
+        match unsafe { wifi_unload_driver() } {
+            0 => Ok(()),
+            err => Err(err),
+        }
     }
 
     /// Start the supplicant.
-    pub fn start_supplicant(p2p_supported: bool) -> bool {
-        unsafe { wifi_start_supplicant(p2p_supported as raw::c_int) == 0 }
+    pub fn start_supplicant(p2p_supported: bool) -> Result<(), c_int> {
+        match unsafe { wifi_start_supplicant(p2p_supported as c_int) } {
+            0 => Ok(()),
+            err => Err(err),
+        }
     }
 
     /// Stop the supplicant.
-    pub fn stop_supplicant(p2p_supported: bool) -> bool {
-        unsafe { wifi_stop_supplicant(p2p_supported as raw::c_int) == 0 }
+    pub fn stop_supplicant(p2p_supported: bool) -> Result<(), c_int> {
+        match unsafe { wifi_stop_supplicant(p2p_supported as c_int) } {
+            0 => Ok(()),
+            err => Err(err),
+        }
     }
 
     /// Open a connection to supplicant.
-    pub fn connect_to_supplicant() -> bool {
-        let res = unsafe { wifi_connect_to_supplicant() };
-        if res < 0 {
-            println!("connect_to_supplicant {}", res);
+    pub fn connect_to_supplicant() -> Result<(), c_int> {
+        match unsafe { wifi_connect_to_supplicant() } {
+            0 => Ok(()),
+            err => Err(err),
         }
-        res == 0
     }
 
     /// Close connection to supplicant.
@@ -144,7 +152,7 @@ impl Wifi {
     /// representing a Wi-Fi event when it occurs.
     pub fn wait_for_event() -> Result<String, ()> {
         // Use a 4k buffer.
-        let mut buffer: [raw::c_char; 4096] = [0; 4096];
+        let mut buffer: [c_char; 4096] = [0; 4096];
         let res = unsafe { wifi_wait_for_event(buffer.as_mut_ptr(), 4096) };
 
         // Some error occured...
@@ -170,8 +178,8 @@ impl Wifi {
     ///
     ///  See wifi/java/android/net/wifi/WifiNative.java for the details of
     ///  driver commands that are supported
-    pub fn command(command: &str) -> Result<String, ()> {
-        let mut buffer: [raw::c_char; 4096] = [0; 4096];
+    pub fn command(command: &str) -> Result<String, c_int> {
+        let mut buffer: [c_char; 4096] = [0; 4096];
         let mut buff_size: usize = 4096;
 
         // turn command into a C string suitable for ffi.
@@ -181,14 +189,13 @@ impl Wifi {
 
         // Some error occured...
         if res < 0 {
-            println!("command error {}", res);
-            return Err(());
+            return Err(res);
         }
 
         // Either no response, or invalid buffer size.
         if buff_size == 0 || buff_size > 4096 {
             println!("buff_size error {}", buff_size);
-            return Err(());
+            return Err(-10000); // TODO: check if that's actually safe to use a custom error value.
         }
 
         // Do a lossy conversion since we have no guarantee that the input

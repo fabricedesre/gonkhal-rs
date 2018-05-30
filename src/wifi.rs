@@ -5,6 +5,7 @@
 use std::ffi::CString;
 use std::os::raw;
 
+// Based on hardware/libhardware_legacy/include/hardware_legacy/wifi.h
 #[link(name = "hardware_legacy")]
 extern "C" {
     /**
@@ -89,10 +90,11 @@ extern "C" {
      *
      * @return 0 if successful, < 0 if an error.
      */
-    pub fn wifi_command(command: *const raw::c_char,
-                        reply: *mut raw::c_char,
-                        reply_len: *mut usize)
-                        -> raw::c_int;
+    pub fn wifi_command(
+        command: *const raw::c_char,
+        reply: *mut raw::c_char,
+        reply_len: *mut usize,
+    ) -> raw::c_int;
 }
 
 /// A stateless Wifi driver.
@@ -101,7 +103,7 @@ pub struct Wifi;
 impl Wifi {
     /// Check if the Wifi driver is loaded.
     pub fn is_driver_loaded() -> bool {
-        unsafe { is_wifi_driver_loaded() == 0 }
+        unsafe { is_wifi_driver_loaded() > 0 }
     }
 
     /// Load the Wifi driver.
@@ -126,7 +128,11 @@ impl Wifi {
 
     /// Open a connection to supplicant.
     pub fn connect_to_supplicant() -> bool {
-        unsafe { wifi_connect_to_supplicant() == 0 }
+        let res = unsafe { wifi_connect_to_supplicant() };
+        if res < 0 {
+            println!("connect_to_supplicant {}", res);
+        }
+        res == 0
     }
 
     /// Close connection to supplicant.
